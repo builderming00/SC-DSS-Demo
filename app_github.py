@@ -6,60 +6,70 @@ import json, os, re, time, math, random
 import numpy as np
 from scipy.optimize import LinearConstraint, Bounds, milp
 from datetime import datetime
-import streamlit as st
 import re
 
 # ================= 页面配置 =================
 st.set_page_config(layout="wide", page_title="智造决策中枢 | SC-DSS")
 
-# ================= 纯物理暴力拦截 =================
-st.markdown("""
-<style>
-    /* 1. 当屏幕宽度小于 1200px 时（绝大部分手机，哪怕伪装成电脑，真实宽度也会触发） */
-    @media screen and (max-width: 1200px) {
-        /* 把 Streamlit 原生的所有容器、侧边栏全部粉碎 */
-        [data-testid="stAppViewContainer"], 
-        [data-testid="stSidebar"], 
-        [data-testid="stHeader"], 
-        header {
-            display: none !important;
-        }
-        
-        /* 强行拉起这坨纯色色块 */
-        #the-wall {
-            display: flex !important;
-            position: fixed !important;
-            top: 0 !important; 
-            left: 0 !important; 
-            width: 100vw !important; 
-            height: 100vh !important;
-            background: #0E1117 !important; /* 暗黑极客风底色 */
-            color: #00FFCC !important;
-            z-index: 999999999 !important; /* 绝对压制 */
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 20px !important;
-            text-align: center !important;
-            font-family: sans-serif !important;
-        }
-    }
-</style>
+# ================= 终极环境检测拦截 (后端硬件级查杀) =================
+def check_mobile_and_block():
+    headers = {}
+    try:
+        # 优先读取最新版 Streamlit 的请求头
+        if hasattr(st, "context") and hasattr(st.context, "headers"):
+            headers = st.context.headers
+        else:
+            # 兼容老版本
+            from streamlit.web.server.websocket_headers import _get_websocket_headers
+            headers = _get_websocket_headers()
+    except Exception:
+        pass
 
-<!-- 这是一堵墙（默认在电脑端隐藏） -->
-<div id="the-wall" style="display: none;">
-    <h1 style="color: #FF4B4B; font-size: 26px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
-    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
-        检测到屏幕物理宽度不足。<br><br>
-        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
-        为保证决策操作精准度，已限制小屏设备访问。<br><br>
-        请使用电脑端打开。
-    </p>
-    <div style="margin-top: 40px; font-size: 12px; color: #666;">
-        © 2026 智造决策中枢 v3.5.1 | PC Only
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    if not headers:
+        return # 读不到就放行
+
+    user_agent = headers.get("User-Agent", "")
+    # 读取硬件级别的移动端声明
+    sec_mobile = headers.get("Sec-CH-UA-Mobile", "")
+
+    is_mobile = False
+    
+    # 1. 只要硬件声明是手机，直接杀
+    if sec_mobile == "?1":
+        is_mobile = True
+    # 2. 传统 UA 检测（防止有些浏览器不发 Sec-CH-UA）
+    elif re.search(r"Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile", user_agent, re.IGNORECASE):
+        is_mobile = True
+
+    if is_mobile:
+        # 强行干掉页面原有的样式，全屏红黑警告
+        st.markdown("""
+        <style>
+            /* 把 Streamlit 的 UI 全隐藏，防止露出破绽 */
+            [data-testid="stAppViewContainer"], [data-testid="stHeader"] { display: none !important; }
+            /* 画一个全屏遮罩 */
+            #mobile-block { 
+                display: flex !important; position: fixed; top: 0; left: 0; 
+                width: 100vw; height: 100vh; background: #0E1117; 
+                z-index: 999999999; flex-direction: column; justify-content: center; align-items: center;
+            }
+        </style>
+        <div id="mobile-block" style="color: #00FFCC; text-align: center; font-family: sans-serif; padding: 30px;">
+            <h1 style="color: #FF4B4B; font-size: 26px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
+            <p style="font-size: 16px; line-height: 1.8;">
+                检测到您正在使用移动端设备。<br><br>
+                由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，<br>
+                为保证决策操作精准度与数据安全，已强制限制 PC 端访问。<br><br>
+                请使用电脑浏览器打开以获取全景数据大屏体验。
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 强行阻断，不管前面渲染了什么，直接停死
+        st.stop()
+
+# 执行拦截检查
+check_mobile_and_block()
 # ================= 全局主题与 UI 引擎 =================
 if 'ui_theme' not in st.session_state: st.session_state['ui_theme'] = '暗黑极客风'
 
