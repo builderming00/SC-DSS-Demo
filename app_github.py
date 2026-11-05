@@ -12,6 +12,7 @@ import re
 st.set_page_config(layout="wide", page_title="智造决策中枢 | SC-DSS")
 
 # ================= 终极环境检测拦截 (后端硬件级查杀) =================
+st.markdown("# 🚨 测试暗号：代码同步成功！！！")
 def check_mobile_and_block():
     headers = {}
     try:
