@@ -70,38 +70,74 @@ def apply_ui_theme(theme_name):
     """
     st.markdown(css, unsafe_allow_html=True)
     
-# ================= 移动端暴力拦截提示 =================
+# ================= 终极移动端暴力拦截 =================
 st.markdown("""
 <style>
-    /* 针对手机屏幕，直接全屏遮罩 */
-    @media screen and (max-width: 768px) {
-        /* 1. 隐藏 Streamlit 的主体内容 */
-        .main, [data-testid="stSidebar"], [data-testid="stPopover"] {
+    /* 桌面端隐藏这个盖板 */
+    #mobile-blocker { display: none; }
+
+    /* 只要屏幕宽度小于 1024px（手机、平板），立刻启动绝对防御 */
+    @media screen and (max-width: 1024px) {
+        /* 1. 彻底干掉 Streamlit 的所有原生组件，连顶部的菜单都不留 */
+        [data-testid="stAppViewContainer"], 
+        [data-testid="stSidebar"], 
+        [data-testid="stPopover"],
+        [data-testid="stHeader"],
+        header {
             display: none !important;
         }
         
-        /* 2. 绘制全屏红色警告面板 */
-        body::before {
-            content: "⚠️ 系统安全提示\\A \\A 检测到您正在使用移动端设备。\\A \\A 为保证 1280 维 MILP 矩阵推演的交互精度，以及企业级数据大屏的视觉完整度，本系统已强制限制 PC (电脑端) 访问。\\A \\A 请使用电脑浏览器打开此链接。";
-            white-space: pre-wrap;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, #0E1117 0%, #1E2130 100%);
-            color: #00FFCC;
-            font-size: 18px;
-            font-weight: bold;
-            line-height: 1.8;
-            padding: 50px 30px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 99999999;
-            box-shadow: inset 0 0 50px rgba(0, 255, 204, 0.2);
+        /* 2. 强行拉起全屏盖板 */
+        #mobile-blocker {
+            display: flex !important;
+            position: fixed !important;
+            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+            width: 100vw !important; height: 100vh !important;
+            background-color: #0E1117 !important;
+            color: #FAFAFA !important;
+            z-index: 2147483647 !important; /* 网页层级最高值 */
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 30px !important;
+            text-align: center !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        }
+        
+        /* 标题样式 */
+        #mobile-blocker h2 {
+            color: #FF4B4B !important;
+            font-size: 24px !important;
+            margin-bottom: 20px !important;
+        }
+        
+        /* 正文样式 */
+        #mobile-blocker p {
+            color: #00FFCC !important;
+            font-size: 16px !important;
+            line-height: 1.8 !important;
+            margin-bottom: 20px !important;
+        }
+        
+        /* 底部的灰字提示 */
+        #mobile-blocker .footer {
+            color: #888888 !important;
+            font-size: 12px !important;
+            margin-top: 40px !important;
         }
     }
 </style>
+
+<!-- 盖板本体 -->
+<div id="mobile-blocker">
+    <h2>⚠️ 企业级安全拦截</h2>
+    <p>
+        检测到您正在使用移动端/小屏幕设备。<br><br>
+        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）浏览器访问。<br><br>
+        请使用电脑端打开此链接以获取全景数据大屏体验。
+    </p>
+    <div class="footer">© 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问</div>
+</div>
 """, unsafe_allow_html=True)
     
     return plotly_template, font_color, grid_color
