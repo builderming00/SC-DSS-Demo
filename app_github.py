@@ -70,56 +70,75 @@ def apply_ui_theme(theme_name):
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
-    
-# ================= 终极移动端拦截（Iframe 自体膨胀法） =================
-# 1. 先放一个高度为 0 的隐藏组件
+
+# ================= 终极移动端 JS 强杀拦截 =================
 components.html(
     """
-    <style>
-        body { 
-            background-color: #0E1117; color: #FAFAFA; 
-            font-family: -apple-system, sans-serif; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            height: 100vh; margin: 0; padding: 30px; text-align: center; 
+    <script>
+        // 检测是否包含手机或平板的关键字
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // 定义一个函数，用来往父页面塞遮罩
+            function applyBlocker() {
+                var parentDoc = window.parent.document;
+                
+                // 如果遮罩已经存在，就不重复塞了
+                if (parentDoc.getElementById('js-mobile-blocker')) return;
+
+                var overlay = parentDoc.createElement('div');
+                overlay.id = 'js-mobile-blocker';
+                
+                // 使用最暴力的内联样式
+                overlay.style.cssText = `
+                    position: fixed !important;
+                    top: 0 !important; left: 0 !important;
+                    width: 100vw !important; height: 100vh !important;
+                    background-color: #0E1117 !important;
+                    color: #00FFCC !important;
+                    z-index: 2147483647 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    padding: 30px !important;
+                    text-align: center !important;
+                    font-family: sans-serif !important;
+                `;
+                
+                overlay.innerHTML = `
+                    <h1 style="color: #FF4B4B; font-size: 24px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
+                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
+                        检测到您正在使用移动端设备。<br><br>
+                        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
+                        为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）访问。<br><br>
+                        请使用电脑端打开以获取大屏体验。
+                    </p>
+                    <div style="margin-top: 40px; font-size: 12px; color: #888;">
+                        © 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问
+                    </div>
+                `;
+                
+                // 强行挂载到 body 上
+                parentDoc.body.appendChild(overlay);
+                
+                // 暴力移除 Streamlit 的原生滚动条和侧边栏，防止被用户滑动出来
+                var sidebar = parentDoc.querySelector('[data-testid="stSidebar"]');
+                if (sidebar) sidebar.style.display = 'none';
+                parentDoc.body.style.overflow = 'hidden';
+            }
+
+            // 立即执行一次
+            applyBlocker();
+            
+            // 每 500 毫秒检测一次（防止 Streamlit 的 Rerun 把遮罩刷掉）
+            setInterval(applyBlocker, 500);
         }
-        h1 { color: #FF4B4B; font-size: 24px; margin-bottom: 20px; }
-        p { color: #00FFCC; font-size: 16px; line-height: 1.8; margin-bottom: 20px;}
-        .footer { color: #888; font-size: 12px; margin-top: 40px; }
-    </style>
-    <div>
-        <h1>⚠️ 企业级安全拦截</h1>
-        <p>
-            检测到您正在使用移动端/小屏幕设备。<br><br>
-            由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
-            为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）浏览器访问。<br><br>
-            请使用电脑端打开以获取全景数据大屏体验。
-        </p>
-        <div class="footer">© 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问</div>
-    </div>
+    </script>
     """,
     height=0,
     width=0
 )
-
-# 2. 用 CSS 魔法，在手机上强行把这个组件撑爆全屏
-st.markdown("""
-<style>
-    /* 使用 pointer: coarse 专门精准打击触屏设备，彻底无视手机浏览器的视口欺骗 */
-    @media screen and (pointer: coarse) and (max-width: 1024px) {
-        /* 强行抓取 components.html 生成的 iframe */
-        iframe[title="st.components.v1.html"] {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 2147483647 !important;
-            background-color: #0E1117 !important;
-            border: none !important;
-        }
-    }
-</style>
-""", unsafe_allow_html=True)
 
     return plotly_template, font_color, grid_color
 
