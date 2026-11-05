@@ -6,33 +6,55 @@ import json, os, re, time, math, random
 import numpy as np
 from scipy.optimize import LinearConstraint, Bounds, milp
 from datetime import datetime
+import streamlit as st
+import re
 
 # ================= 页面配置 =================
 st.set_page_config(layout="wide", page_title="智造决策中枢 | SC-DSS")
 
-# ================= 终极环境检测拦截 (移动端直接封杀) =================
+# ================= 终极环境检测拦截 (带诊断) =================
 try:
-    # 尝试获取 Streamlit 的底层上下文环境 (适用于最新版)
     from streamlit import context
-    headers = context.headers
+    # 尝试用多种方式抓取请求头
+    headers = {}
+    if hasattr(context, "headers"):
+        headers = context.headers
+    
     user_agent = headers.get("User-Agent", "")
     
-    # 匹配移动端设备特征
-    if re.search(r"Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile", user_agent, re.IGNORECASE):
+    # 【诊断专用】把这一行留在代码里，你手机上刷新时看下屏幕顶上有没有印出来
+    # st.write(f"DEBUG: 您的设备UA是 -> {user_agent}")
+    
+    # 如果 UA 为空，说明 Streamlit 把它屏蔽了，咱们直接用宽屏特征来查
+    if not user_agent:
+        # 如果获取不到UA，直接默认拦截所有宽度小于 1024 的设备
         st.markdown("""
-        <div style="background-color: #0E1117; color: #00FFCC; padding: 50px 30px; border-radius: 15px; text-align: center; border: 2px solid #FF4B4B; margin-top: 50px;">
-            <h1 style="color: #FF4B4B; font-size: 28px;">⚠️ 企业级安全拦截</h1>
-            <p style="font-size: 18px; line-height: 2;">检测到您正在使用移动端设备。<br><br>
-            由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，<br>
-            为保证决策操作精准度与数据安全，已强制限制 PC 端访问。<br><br>
-            请使用电脑浏览器打开以获取全景数据大屏体验。</p>
-            <hr style="border-color: #333; margin: 30px 0;">
-            <p style="font-size: 14px; color: #888;">© 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问</p>
+        <style>
+        @media screen and (max-width: 1024px) {
+            .main { display: none; }
+            #mobile-fallback { display: flex !important; }
+        }
+        </style>
+        <div id="mobile-fallback" style="display: none; position: fixed; top:0; left:0; width:100vw; height:100vh; background:#0E1117; color:#00FFCC; z-index:9999999; flex-direction:column; justify-content:center; align-items:center; padding:30px; text-align:center;">
+            <h1 style="color:#FF4B4B;">⚠️ 企业级安全拦截 (CSS)</h1>
+            <p>检测到屏幕尺寸过小，为保证 1280 维 MILP 矩阵推演精度，请使用 PC 端访问。</p>
         </div>
         """, unsafe_allow_html=True)
-        st.stop() # 强行阻断，不再渲染后面任何代码
-except Exception:
-    # 兼容本地或老版本环境，如果报错就放行
+        st.stop()
+    else:
+        # 如果抓到了 UA，正常用正则匹配
+        if re.search(r"Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile", user_agent, re.IGNORECASE):
+            st.markdown("""
+            <div style="background-color: #0E1117; color: #00FFCC; padding: 50px 30px; border-radius: 15px; text-align: center; border: 2px solid #FF4B4B; margin-top: 50px;">
+                <h1 style="color: #FF4B4B; font-size: 28px;">⚠️ 企业级安全拦截 (UA)</h1>
+                <p style="font-size: 18px; line-height: 2;">检测到移动端设备特征，系统已强制限制 PC 端访问。</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
+
+except Exception as e:
+    # 如果 context 模块报错，把错误信息吐出来
+    st.error(f"环境检测模块兼容性异常: {e}")
     pass
 
 # ================= 全局主题与 UI 引擎 =================
