@@ -70,30 +70,39 @@ def apply_ui_theme(theme_name):
     """
     st.markdown(css, unsafe_allow_html=True)
     
-    # ================= 移动端适配拦截提示 =================
-    st.markdown("""
-    <style>
-        .mobile-warning {
-            display: none; background: linear-gradient(135deg, #FF4B4B 0%, #FF7676 100%);
-            color: white; padding: 25px; border-radius: 12px; text-align: center; font-weight: bold;
-            box-shadow: 0 10px 30px rgba(255, 75, 75, 0.4); margin: 20px auto; max-width: 90%;
-            z-index: 999999; font-family: sans-serif; line-height: 1.6;
+# ================= 移动端暴力拦截提示 =================
+st.markdown("""
+<style>
+    /* 针对手机屏幕，直接全屏遮罩 */
+    @media screen and (max-width: 768px) {
+        /* 1. 隐藏 Streamlit 的主体内容 */
+        .main, [data-testid="stSidebar"], [data-testid="stPopover"] {
+            display: none !important;
         }
-        /* 当屏幕宽度小于 768px（手机端）时，隐藏主内容并只显示警告 */
-        @media screen and (max-width: 768px) {
-            .mobile-warning { display: block; }
-            .main .block-container { display: none !important; }
-            [data-testid="stSidebar"] { display: none !important; }
-            [data-testid="stPopover"] { display: none !important; }
+        
+        /* 2. 绘制全屏红色警告面板 */
+        body::before {
+            content: "⚠️ 系统安全提示\\A \\A 检测到您正在使用移动端设备。\\A \\A 为保证 1280 维 MILP 矩阵推演的交互精度，以及企业级数据大屏的视觉完整度，本系统已强制限制 PC (电脑端) 访问。\\A \\A 请使用电脑浏览器打开此链接。";
+            white-space: pre-wrap;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #0E1117 0%, #1E2130 100%);
+            color: #00FFCC;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.8;
+            padding: 50px 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999999;
+            box-shadow: inset 0 0 50px rgba(0, 255, 204, 0.2);
         }
-    </style>
-    <div class="mobile-warning">
-        📱 检测到您正在使用移动端设备<br><br>
-        由于本系统包含 1280 维的 MILP 运筹学矩阵推演与多维交互看板，<br>
-        为保证决策操作精准度与数据安全，<br>
-        <b style="font-size: 18px; color: #FFD700;">请使用 PC (电脑端) 浏览器访问以获取全景数据大屏体验。</b>
-    </div>
-    """, unsafe_allow_html=True)
+    }
+</style>
+""", unsafe_allow_html=True)
     
     return plotly_template, font_color, grid_color
 
