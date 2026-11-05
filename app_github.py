@@ -23,7 +23,7 @@ try:
     user_agent = headers.get("User-Agent", "")
     
     # 【诊断专用】把这一行留在代码里，你手机上刷新时看下屏幕顶上有没有印出来
-     st.write(f"DEBUG: 您的设备UA是 -> {user_agent}")
+    # st.write(f"DEBUG: 您的设备UA是 -> {user_agent}")
     
     # 如果 UA 为空，说明 Streamlit 把它屏蔽了，咱们直接用宽屏特征来查
     if not user_agent:
