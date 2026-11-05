@@ -71,66 +71,56 @@ def apply_ui_theme(theme_name):
     """
     st.markdown(css, unsafe_allow_html=True)
     
-# ================= 终极 JavaScript 移动端拦截 =================
+# ================= 终极移动端拦截（Iframe 自体膨胀法） =================
+# 1. 先放一个高度为 0 的隐藏组件
 components.html(
     """
-    <script>
-        // 延迟 1 秒执行，确保父窗口的 DOM 已经加载完毕
-        setTimeout(function() {
-            // 获取父窗口（也就是 Streamlit 的主页面）的文档
-            var parentDoc = window.parent.document;
-            
-            // 判断屏幕宽度是否小于 1024（手机和平板）
-            if (window.parent.innerWidth < 1024) {
-                
-                // 如果已经存在拦截层，就不重复创建了
-                if (parentDoc.getElementById('mobile-blocker-js')) return;
-
-                // 创建一个全屏遮罩节点
-                var overlay = parentDoc.createElement('div');
-                overlay.id = 'mobile-blocker-js';
-                
-                // 注入绝对防御的 CSS 样式
-                overlay.style.position = 'fixed';
-                overlay.style.top = '0';
-                overlay.style.left = '0';
-                overlay.style.width = '100vw';
-                overlay.style.height = '100vh';
-                overlay.style.backgroundColor = '#0E1117';
-                overlay.style.color = '#00FFCC';
-                overlay.style.zIndex = '2147483647'; // 宇宙最高层级
-                overlay.style.display = 'flex';
-                overlay.style.flexDirection = 'column';
-                overlay.style.justifyContent = 'center';
-                overlay.style.alignItems = 'center';
-                overlay.style.textAlign = 'center';
-                overlay.style.padding = '30px';
-                overlay.style.fontFamily = 'sans-serif';
-                
-                // 注入 HTML 内容
-                overlay.innerHTML = `
-                    <h1 style="color: #FF4B4B; font-size: 24px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
-                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
-                        检测到您正在使用移动端/小屏幕设备。<br><br>
-                        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
-                        为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）浏览器访问。<br><br>
-                        请使用电脑端打开以获取全景数据大屏体验。
-                    </p>
-                    <div style="margin-top: 40px; font-size: 12px; color: #888;">
-                        © 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问
-                    </div>
-                `;
-                
-                // 将遮罩强行塞进页面的 <body> 里
-                parentDoc.body.appendChild(overlay);
-            }
-        }, 1000);
-    </script>
+    <style>
+        body { 
+            background-color: #0E1117; color: #FAFAFA; 
+            font-family: -apple-system, sans-serif; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; padding: 30px; text-align: center; 
+        }
+        h1 { color: #FF4B4B; font-size: 24px; margin-bottom: 20px; }
+        p { color: #00FFCC; font-size: 16px; line-height: 1.8; margin-bottom: 20px;}
+        .footer { color: #888; font-size: 12px; margin-top: 40px; }
+    </style>
+    <div>
+        <h1>⚠️ 企业级安全拦截</h1>
+        <p>
+            检测到您正在使用移动端/小屏幕设备。<br><br>
+            由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
+            为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）浏览器访问。<br><br>
+            请使用电脑端打开以获取全景数据大屏体验。
+        </p>
+        <div class="footer">© 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问</div>
+    </div>
     """,
     height=0,
     width=0
 )
-    
+
+# 2. 用 CSS 魔法，在手机上强行把这个组件撑爆全屏
+st.markdown("""
+<style>
+    /* 使用 pointer: coarse 专门精准打击触屏设备，彻底无视手机浏览器的视口欺骗 */
+    @media screen and (pointer: coarse) and (max-width: 1024px) {
+        /* 强行抓取 components.html 生成的 iframe */
+        iframe[title="st.components.v1.html"] {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483647 !important;
+            background-color: #0E1117 !important;
+            border: none !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
     return plotly_template, font_color, grid_color
 
 plotly_tpl, font_color, grid_color = apply_ui_theme(st.session_state['ui_theme'])
