@@ -11,51 +11,42 @@ import re
 # ================= 页面配置 =================
 st.set_page_config(layout="wide", page_title="智造决策中枢 | SC-DSS")
 
-# ================= 终极环境检测拦截 (后端硬件级查杀) =================
-st.markdown("# 🚨 测试暗号：代码同步成功！！！")
+# ================= 终极环境检测拦截 (修复黑屏版) =================
 def check_mobile_and_block():
     headers = {}
     try:
-        # 优先读取最新版 Streamlit 的请求头
         if hasattr(st, "context") and hasattr(st.context, "headers"):
             headers = st.context.headers
         else:
-            # 兼容老版本
             from streamlit.web.server.websocket_headers import _get_websocket_headers
             headers = _get_websocket_headers()
     except Exception:
         pass
 
     if not headers:
-        return # 读不到就放行
+        return
 
     user_agent = headers.get("User-Agent", "")
-    # 读取硬件级别的移动端声明
     sec_mobile = headers.get("Sec-CH-UA-Mobile", "")
 
     is_mobile = False
-    
-    # 1. 只要硬件声明是手机，直接杀
     if sec_mobile == "?1":
         is_mobile = True
-    # 2. 传统 UA 检测（防止有些浏览器不发 Sec-CH-UA）
     elif re.search(r"Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile", user_agent, re.IGNORECASE):
         is_mobile = True
 
     if is_mobile:
-        # 强行干掉页面原有的样式，全屏红黑警告
+        # 这次咱们不隐藏任何容器，直接悬停盖住！
         st.markdown("""
-        <style>
-            /* 把 Streamlit 的 UI 全隐藏，防止露出破绽 */
-            [data-testid="stAppViewContainer"], [data-testid="stHeader"] { display: none !important; }
-            /* 画一个全屏遮罩 */
-            #mobile-block { 
-                display: flex !important; position: fixed; top: 0; left: 0; 
-                width: 100vw; height: 100vh; background: #0E1117; 
-                z-index: 999999999; flex-direction: column; justify-content: center; align-items: center;
-            }
-        </style>
-        <div id="mobile-block" style="color: #00FFCC; text-align: center; font-family: sans-serif; padding: 30px;">
+        <div style="
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100vw; height: 100vh; 
+            background: #0E1117; 
+            z-index: 2147483647; /* 宇宙最高层级 */
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            color: #00FFCC; text-align: center; font-family: sans-serif; padding: 30px;
+        ">
             <h1 style="color: #FF4B4B; font-size: 26px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
             <p style="font-size: 16px; line-height: 1.8;">
                 检测到您正在使用移动端设备。<br><br>
@@ -63,13 +54,14 @@ def check_mobile_and_block():
                 为保证决策操作精准度与数据安全，已强制限制 PC 端访问。<br><br>
                 请使用电脑浏览器打开以获取全景数据大屏体验。
             </p>
+            <div style="margin-top: 40px; font-size: 12px; color: #666;">
+                © 2026 智造决策中枢 v3.5.1 | PC Only
+            </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # 强行阻断，不管前面渲染了什么，直接停死
         st.stop()
 
-# 执行拦截检查
 check_mobile_and_block()
 # ================= 全局主题与 UI 引擎 =================
 if 'ui_theme' not in st.session_state: st.session_state['ui_theme'] = '暗黑极客风'
