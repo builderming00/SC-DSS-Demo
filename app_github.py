@@ -6,6 +6,7 @@ import json, os, re, time, math, random
 import numpy as np
 from scipy.optimize import LinearConstraint, Bounds, milp
 from datetime import datetime
+import streamlit.components.v1 as components
 
 # ================= 页面配置 =================
 st.set_page_config(layout="wide", page_title="智造决策中枢 | SC-DSS")
@@ -70,75 +71,65 @@ def apply_ui_theme(theme_name):
     """
     st.markdown(css, unsafe_allow_html=True)
     
-# ================= 终极移动端暴力拦截 =================
-st.markdown("""
-<style>
-    /* 桌面端隐藏这个盖板 */
-    #mobile-blocker { display: none; }
+# ================= 终极 JavaScript 移动端拦截 =================
+components.html(
+    """
+    <script>
+        // 延迟 1 秒执行，确保父窗口的 DOM 已经加载完毕
+        setTimeout(function() {
+            // 获取父窗口（也就是 Streamlit 的主页面）的文档
+            var parentDoc = window.parent.document;
+            
+            // 判断屏幕宽度是否小于 1024（手机和平板）
+            if (window.parent.innerWidth < 1024) {
+                
+                // 如果已经存在拦截层，就不重复创建了
+                if (parentDoc.getElementById('mobile-blocker-js')) return;
 
-    /* 只要屏幕宽度小于 1024px（手机、平板），立刻启动绝对防御 */
-    @media screen and (max-width: 1024px) {
-        /* 1. 彻底干掉 Streamlit 的所有原生组件，连顶部的菜单都不留 */
-        [data-testid="stAppViewContainer"], 
-        [data-testid="stSidebar"], 
-        [data-testid="stPopover"],
-        [data-testid="stHeader"],
-        header {
-            display: none !important;
-        }
-        
-        /* 2. 强行拉起全屏盖板 */
-        #mobile-blocker {
-            display: flex !important;
-            position: fixed !important;
-            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-            width: 100vw !important; height: 100vh !important;
-            background-color: #0E1117 !important;
-            color: #FAFAFA !important;
-            z-index: 2147483647 !important; /* 网页层级最高值 */
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 30px !important;
-            text-align: center !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-        }
-        
-        /* 标题样式 */
-        #mobile-blocker h2 {
-            color: #FF4B4B !important;
-            font-size: 24px !important;
-            margin-bottom: 20px !important;
-        }
-        
-        /* 正文样式 */
-        #mobile-blocker p {
-            color: #00FFCC !important;
-            font-size: 16px !important;
-            line-height: 1.8 !important;
-            margin-bottom: 20px !important;
-        }
-        
-        /* 底部的灰字提示 */
-        #mobile-blocker .footer {
-            color: #888888 !important;
-            font-size: 12px !important;
-            margin-top: 40px !important;
-        }
-    }
-</style>
-
-<!-- 盖板本体 -->
-<div id="mobile-blocker">
-    <h2>⚠️ 企业级安全拦截</h2>
-    <p>
-        检测到您正在使用移动端/小屏幕设备。<br><br>
-        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）浏览器访问。<br><br>
-        请使用电脑端打开此链接以获取全景数据大屏体验。
-    </p>
-    <div class="footer">© 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问</div>
-</div>
-""", unsafe_allow_html=True)
+                // 创建一个全屏遮罩节点
+                var overlay = parentDoc.createElement('div');
+                overlay.id = 'mobile-blocker-js';
+                
+                // 注入绝对防御的 CSS 样式
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100vw';
+                overlay.style.height = '100vh';
+                overlay.style.backgroundColor = '#0E1117';
+                overlay.style.color = '#00FFCC';
+                overlay.style.zIndex = '2147483647'; // 宇宙最高层级
+                overlay.style.display = 'flex';
+                overlay.style.flexDirection = 'column';
+                overlay.style.justifyContent = 'center';
+                overlay.style.alignItems = 'center';
+                overlay.style.textAlign = 'center';
+                overlay.style.padding = '30px';
+                overlay.style.fontFamily = 'sans-serif';
+                
+                // 注入 HTML 内容
+                overlay.innerHTML = `
+                    <h1 style="color: #FF4B4B; font-size: 24px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
+                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
+                        检测到您正在使用移动端/小屏幕设备。<br><br>
+                        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
+                        为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）浏览器访问。<br><br>
+                        请使用电脑端打开以获取全景数据大屏体验。
+                    </p>
+                    <div style="margin-top: 40px; font-size: 12px; color: #888;">
+                        © 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问
+                    </div>
+                `;
+                
+                // 将遮罩强行塞进页面的 <body> 里
+                parentDoc.body.appendChild(overlay);
+            }
+        }, 1000);
+    </script>
+    """,
+    height=0,
+    width=0
+)
     
     return plotly_template, font_color, grid_color
 
