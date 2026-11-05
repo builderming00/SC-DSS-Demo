@@ -75,6 +75,28 @@ def apply_ui_theme(theme_name):
 
 plotly_tpl, font_color, grid_color = apply_ui_theme(st.session_state['ui_theme'])
 
+
+# ================= 账号数据初始化 (必须放在悬浮球前面) =================
+class User:
+    def __init__(self, name, password):
+        self.name = name
+        self.password = password
+        self.role = "高级管理员"
+
+
+# 防御性文件读取
+dic_name_and_password = {}
+try:
+    if os.path.exists('demo.json'):
+        with open('demo.json', 'r', encoding='utf-8') as f:
+            dic_name_and_password = json.load(f)
+    else:
+        dic_name_and_password = {"admin": "admin123"}
+        with open('demo.json', 'w', encoding='utf-8') as f:
+            json.dump(dic_name_and_password, f, ensure_ascii=False, indent=2)
+except Exception:
+    dic_name_and_password = {"admin": "admin123"}  # 云端降级为内存字典
+
 # ================= 悬浮球 UI (企业级控制中心) =================
 with st.popover("⚙️", help="打开系统级设置"):
     st.markdown("### 🎛️ 系统控制中枢")
@@ -93,7 +115,7 @@ with st.popover("⚙️", help="打开系统级设置"):
             new_pwd = st.text_input("新密码", type="password")
             confirm_pwd = st.text_input("确认新密码", type="password")
             if st.form_submit_button("确认修改", use_container_width=True, type="primary"):
-                username = st.session_state['current_user'].name
+                username = st.session_state['current_user'].name if st.session_state.get('current_user') else "admin"
                 if old_pwd == dic_name_and_password.get(username):
                     if new_pwd == confirm_pwd and len(new_pwd) >= 4:
                         dic_name_and_password[username] = new_pwd
@@ -122,7 +144,7 @@ with st.popover("⚙️", help="打开系统级设置"):
                     try:
                         with open("feedback.txt", "a", encoding="utf-8") as f:
                             f.write(
-                                f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 用户: {st.session_state['current_user'].name} | 类型: {fb_type}\n内容: {fb_text}\n---\n")
+                                f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 用户: {st.session_state['current_user'].name if st.session_state.get('current_user') else '游客'} | 类型: {fb_type}\n内容: {fb_text}\n---\n")
                     except Exception:
                         pass  # 云端只读时忽略
                     st.toast("🚀 反馈已成功发送至云端服务器！", icon="✅")
@@ -131,28 +153,7 @@ with st.popover("⚙️", help="打开系统级设置"):
                 else:
                     st.warning("⚠️ 请填写反馈内容！")
 
-
 # ================= 登录/注册 UI 模块 =================
-class User:
-    def __init__(self, name, password):
-        self.name = name
-        self.password = password
-        self.role = "高级管理员"
-
-
-# 防御性文件读取
-dic_name_and_password = {}
-try:
-    if os.path.exists('demo.json'):
-        with open('demo.json', 'r', encoding='utf-8') as f:
-            dic_name_and_password = json.load(f)
-    else:
-        dic_name_and_password = {"admin": "admin123"}
-        with open('demo.json', 'w', encoding='utf-8') as f:
-            json.dump(dic_name_and_password, f, ensure_ascii=False, indent=2)
-except Exception:
-    dic_name_and_password = {"admin": "admin123"}  # 云端降级为内存字典
-
 if 'current_user' not in st.session_state: st.session_state['current_user'] = None
 
 if st.session_state['current_user'] is None:
