@@ -6,10 +6,34 @@ import json, os, re, time, math, random
 import numpy as np
 from scipy.optimize import LinearConstraint, Bounds, milp
 from datetime import datetime
-import streamlit.components.v1 as components
 
 # ================= 页面配置 =================
 st.set_page_config(layout="wide", page_title="智造决策中枢 | SC-DSS")
+
+# ================= 终极环境检测拦截 (移动端直接封杀) =================
+try:
+    # 尝试获取 Streamlit 的底层上下文环境 (适用于最新版)
+    from streamlit import context
+    headers = context.headers
+    user_agent = headers.get("User-Agent", "")
+    
+    # 匹配移动端设备特征
+    if re.search(r"Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile", user_agent, re.IGNORECASE):
+        st.markdown("""
+        <div style="background-color: #0E1117; color: #00FFCC; padding: 50px 30px; border-radius: 15px; text-align: center; border: 2px solid #FF4B4B; margin-top: 50px;">
+            <h1 style="color: #FF4B4B; font-size: 28px;">⚠️ 企业级安全拦截</h1>
+            <p style="font-size: 18px; line-height: 2;">检测到您正在使用移动端设备。<br><br>
+            由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，<br>
+            为保证决策操作精准度与数据安全，已强制限制 PC 端访问。<br><br>
+            请使用电脑浏览器打开以获取全景数据大屏体验。</p>
+            <hr style="border-color: #333; margin: 30px 0;">
+            <p style="font-size: 14px; color: #888;">© 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.stop() # 强行阻断，不再渲染后面任何代码
+except Exception:
+    # 兼容本地或老版本环境，如果报错就放行
+    pass
 
 # ================= 全局主题与 UI 引擎 =================
 if 'ui_theme' not in st.session_state: st.session_state['ui_theme'] = '暗黑极客风'
@@ -70,76 +94,6 @@ def apply_ui_theme(theme_name):
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
-
-# ================= 终极移动端 JS 强杀拦截 =================
-components.html(
-    """
-    <script>
-        // 检测是否包含手机或平板的关键字
-        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-            // 定义一个函数，用来往父页面塞遮罩
-            function applyBlocker() {
-                var parentDoc = window.parent.document;
-                
-                // 如果遮罩已经存在，就不重复塞了
-                if (parentDoc.getElementById('js-mobile-blocker')) return;
-
-                var overlay = parentDoc.createElement('div');
-                overlay.id = 'js-mobile-blocker';
-                
-                // 使用最暴力的内联样式
-                overlay.style.cssText = `
-                    position: fixed !important;
-                    top: 0 !important; left: 0 !important;
-                    width: 100vw !important; height: 100vh !important;
-                    background-color: #0E1117 !important;
-                    color: #00FFCC !important;
-                    z-index: 2147483647 !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    justify-content: center !important;
-                    align-items: center !important;
-                    padding: 30px !important;
-                    text-align: center !important;
-                    font-family: sans-serif !important;
-                `;
-                
-                overlay.innerHTML = `
-                    <h1 style="color: #FF4B4B; font-size: 24px; margin-bottom: 20px;">⚠️ 企业级安全拦截</h1>
-                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
-                        检测到您正在使用移动端设备。<br><br>
-                        由于本系统包含 <b>1280 维 MILP 矩阵推演</b> 与多维交互看板，
-                        为保证决策操作精准度与数据安全，已强制限制 PC（电脑端）访问。<br><br>
-                        请使用电脑端打开以获取大屏体验。
-                    </p>
-                    <div style="margin-top: 40px; font-size: 12px; color: #888;">
-                        © 2026 智造决策中枢 v3.5.1 | 仅限 PC 端访问
-                    </div>
-                `;
-                
-                // 强行挂载到 body 上
-                parentDoc.body.appendChild(overlay);
-                
-                // 暴力移除 Streamlit 的原生滚动条和侧边栏，防止被用户滑动出来
-                var sidebar = parentDoc.querySelector('[data-testid="stSidebar"]');
-                if (sidebar) sidebar.style.display = 'none';
-                parentDoc.body.style.overflow = 'hidden';
-            }
-
-            // 立即执行一次
-            applyBlocker();
-            
-            // 每 500 毫秒检测一次（防止 Streamlit 的 Rerun 把遮罩刷掉）
-            setInterval(applyBlocker, 500);
-        }
-    </script>
-    """,
-    height=0,
-    width=0
-)
-
     return plotly_template, font_color, grid_color
 
 plotly_tpl, font_color, grid_color = apply_ui_theme(st.session_state['ui_theme'])
